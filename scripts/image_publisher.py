@@ -12,7 +12,7 @@ class Nodo(object):
         self.image = None
         self.br = CvBridge()
         # Node cycle rate (in Hz).
-        self.loop_rate = rospy.Rate(1)
+        self.loop_rate = rospy.Rate(20)
 
         # Publishers
         self.pub = rospy.Publisher('imagetimer', Image,queue_size=10)
@@ -22,7 +22,9 @@ class Nodo(object):
 
     def callback(self, msg):
         rospy.loginfo('Image received...')
-        self.image = self.br.imgmsg_to_cv2(msg)
+        self.image = self.br.imgmsg_to_cv2(msg, msg.encoding)
+        cv_image_array = np.array(self.image, dtype = np.dtype('f8'))
+        cv_image_norm = cv2.normalize(cv_image_array, cv_image_array, 0, 1, cv2.NORM_MINMAX)
 
 
     def start(self):
@@ -32,7 +34,7 @@ class Nodo(object):
             rospy.loginfo('publishing image')
             #br = CvBridge()
             if self.image is not None:
-                self.pub.publish(br.cv2_to_imgmsg(self.image))
+                self.pub.publish(self.br.cv2_to_imgmsg(self.image, "rgb8"))
             self.loop_rate.sleep()
 
 if __name__ == '__main__':

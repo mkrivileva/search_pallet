@@ -30,7 +30,8 @@ class SearchImage():
         self.ranges = None
         self.image = None
         self.image_height = 0
-        self.loop_rate = rospy.Rate(1)
+        self.image_width = 0
+        self.loop_rate = rospy.Rate(20)
 
     def xy_of_dot(self, index, dist_value):
         angle = self.angle_of_dot(index)
@@ -54,8 +55,8 @@ class SearchImage():
                 beta = self.angle_max
             else:
                 beta = math.asin(self.PALLET_DIAG / dist)
-            min_i = max(0, i - beta // self.angle_increment)
-            max_i = min(len(self.ranges), i + beta // self.angle_increment)
+            min_i = int(max(0, i - beta // self.angle_increment))
+            max_i = int(min(len(self.ranges), i + beta // self.angle_increment))
             width_candidates = []
             length_candidates = []
             diag_candidates = []
@@ -83,23 +84,26 @@ class SearchImage():
         self.ranges = msg.ranges
 
     def image_callback(self, msg):
-        self.image = self.bridge.imgmsg_to_cv2(msg)
-        # self.image_height = msg.height
+        self.image = self.bridge.imgmsg_to_cv2(msg, msg.encoding)
+        self.image_height = msg.height
+        self.image_width = msg.width
 
     def start(self):
         while not rospy.is_shutdown():
-            # if self.ranges is not None:
-            #     w, l, d = self.search_pallet()
-            #     if w != -1:
-            #         print (f'Pallet was found at {w}, {l}, {d}')
-            #         if self.image is not None:
-            #             self.image = cv2.circle(self.image, (self.image_height // 2, w), (255,0,0), 2)
-            #             self.image = cv2.circle(self.image, (self.image_height // 2, l), (0,255,0), 2)
-            #             self.image = cv2.circle(self.image, (self.image_height // 2, d), (0,0,255), 2)
-            #     else:
-            #         print ("No pallet was found!")
+            if self.ranges is not None:
+                w, l, d = self.search_pallet()
+                if w != -1:
+                    print (f'Pallet was found at {w}, {l}, {d}')
+                    if self.image is not None:
+                        self.image = cv2.circle(self.image, (w, self.image_height // 2), 5, (255,0,0), 2)
+                        self.image = cv2.circle(self.image, (l, self.image_height // 2), 5, (0,255,0), 2)
+                        self.image = cv2.circle(self.image, (d, self.image_height // 2), 5, (0,0,255), 2)
+                # else:
+                #     print ("No pallet was found!")
             if self.image is not None:
-                self.image_pub.publish(self.bridge.cv2_to_imgmsg(self.image))
+                self.image = cv2.line(self.image, (0, self.image_height // 2), \
+                (self.image_width, self.image_height // 2), (128, 128, 0), 2)
+                self.image_pub.publish(self.bridge.cv2_to_imgmsg(self.image, "rgb8"))
             self.loop_rate.sleep()
 
 

@@ -165,8 +165,8 @@
 	
   </node>
 
-  <!-- <node name="listener" pkg="navigate" type="node.py" args=""/> -->
-  <!-- <node name="search_pallet" pkg="navigate" type="search_pallet.py" args=""/> -->
-  <!-- <node name="image_publisher" pkg="navigate" type="image_publisher.py" args=""/> -->
+  <!-- <node name="listener" pkg="search_pallet" type="node.py" args=""/> -->
+  <node name="search_pallet" pkg="search_pallet" type="search_pallet.py" args=""/>
+  <!-- <node name="image_publisher" pkg="search_pallet" type="image_publisher.py" args=""/> -->
 
 </launch>
