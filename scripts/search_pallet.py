@@ -20,11 +20,11 @@ class SearchImage():
         self.img_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.image_callback)
         self.image_pub = rospy.Publisher('/search_pallet', Image, queue_size=1)
 
-        self.PALLET_WIDTH = 1.0
-        self.PALLET_LENGTH = 2.0
+        self.PALLET_WIDTH = 0.39
+        self.PALLET_LENGTH = 0.41
         self.PALLET_DIAG = (self.PALLET_WIDTH ** 2 + self.PALLET_LENGTH ** 2) ** 0.5
         self.MAX_RANGE = 2.0
-        self.tolerance = 0.15
+        self.tolerance = 0.02
         self.angle_increment = float('nan')
         self.angle_max = float('nan')
         self.ranges = None
@@ -73,10 +73,12 @@ class SearchImage():
                     for d in diag_candidates:
                         s1 = self.distance_between_dots(w, d)
                         s2 = self.distance_between_dots(l, d)
+                        s3 = self.distance_between_dots(l, w)
                         if (abs(s1 - self.PALLET_LENGTH) <= self.tolerance and
-                            abs(s2 - self.PALLET_WIDTH) <= self.tolerance):
-                            return (w, l, d)
-            return (-1, -1, -1)
+                            abs(s2 - self.PALLET_WIDTH) <= self.tolerance and
+                            abs(s3 - self.PALLET_DIAG) <= self.tolerance):
+                            return (i, w, l, d)
+            return (-1, -1, -1, -1)
 
     def scan_callback(self, msg):
         self.angle_increment = msg.angle_increment
@@ -91,10 +93,11 @@ class SearchImage():
     def start(self):
         while not rospy.is_shutdown():
             if self.ranges is not None:
-                w, l, d = self.search_pallet()
+                i, w, l, d = self.search_pallet()
                 if w != -1:
-                    print (f'Pallet was found at {w}, {l}, {d}')
+                    #print (f'Pallet was found at {w}, {l}, {d}')
                     if self.image is not None:
+                        self.image = cv2.circle(self.image, (i, self.image_height // 2), 5, (255,255,0), 2)
                         self.image = cv2.circle(self.image, (w, self.image_height // 2), 5, (255,0,0), 2)
                         self.image = cv2.circle(self.image, (l, self.image_height // 2), 5, (0,255,0), 2)
                         self.image = cv2.circle(self.image, (d, self.image_height // 2), 5, (0,0,255), 2)
