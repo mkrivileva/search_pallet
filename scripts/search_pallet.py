@@ -31,7 +31,7 @@ class SearchImage():
         self.image = None
         self.image_height = 0
         self.image_width = 0
-        self.loop_rate = rospy.Rate(20)
+        self.loop_rate = rospy.Rate(1)
 
     def xy_of_dot(self, index, dist_value):
         angle = self.angle_of_dot(index)
@@ -46,7 +46,7 @@ class SearchImage():
         return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
 
     def search_pallet(self):
-        for i in range(len(self.ranges)):
+        for i in range(0, len(self.ranges), 5):
             dist = self.ranges[i]
             if dist > self.MAX_RANGE:
                 continue
@@ -68,17 +68,24 @@ class SearchImage():
                     length_candidates.append(j)
                 if abs(s - self.PALLET_DIAG) <= self.tolerance:
                     diag_candidates.append(j)
+            candidates = []
+            errors = []
             for w in width_candidates:
                 for l in length_candidates:
                     for d in diag_candidates:
-                        s1 = self.distance_between_dots(w, d)
-                        s2 = self.distance_between_dots(l, d)
-                        s3 = self.distance_between_dots(l, w)
-                        if (abs(s1 - self.PALLET_LENGTH) <= self.tolerance and
-                            abs(s2 - self.PALLET_WIDTH) <= self.tolerance and
-                            abs(s3 - self.PALLET_DIAG) <= self.tolerance):
-                            return (i, w, l, d)
+                        s1 = abs(self.distance_between_dots(w, d) - self.PALLET_LENGTH)
+                        s2 = abs(self.distance_between_dots(l, d)  - self.PALLET_WIDTH)
+                        s3 = abs(self.distance_between_dots(l, w) - self.PALLET_DIAG)
+                        if (s1 <= self.tolerance and s2 <= self.tolerance and s3 <= self.tolerance):
+                            # return (i, w, l, d)
+                            candidates.append((i, w, l, d))
+                            errors.append((s1 ** 2 + s2 ** 2 + s3 ** 2) ** 0.5)
+        if len(errors) == 0:
             return (-1, -1, -1, -1)
+        min_value = min(errors)
+        min_index=errors.index(min_value)
+        return candidates[min_index]
+            
 
     def scan_callback(self, msg):
         self.angle_increment = msg.angle_increment
@@ -97,7 +104,7 @@ class SearchImage():
                 if w != -1:
                     #print (f'Pallet was found at {w}, {l}, {d}')
                     if self.image is not None:
-                        self.image = cv2.circle(self.image, (i, self.image_height // 2), 5, (255,255,0), 2)
+                        self.image = cv2.circle(self.image, (i, self.image_height // 2), 5, (0, 255, 255), 2)
                         self.image = cv2.circle(self.image, (w, self.image_height // 2), 5, (255,0,0), 2)
                         self.image = cv2.circle(self.image, (l, self.image_height // 2), 5, (0,255,0), 2)
                         self.image = cv2.circle(self.image, (d, self.image_height // 2), 5, (0,0,255), 2)
