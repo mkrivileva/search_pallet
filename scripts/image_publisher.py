@@ -42,11 +42,12 @@ class Nodo(object):
             if self.image is not None:
                 rospy.loginfo('publishing image')
                 hsv_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+                hsv_img = cv2.putText(hsv_img, str(hsv_img.shape[0]), (20, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
                 for i in range(len(self.ranges)):
                     color = (self.ranges[i] - self.range_min) // self.increment
                     if i == len(self.ranges) // 2:
                         hsv_img = cv2.putText(hsv_img, str(round(self.ranges[i], 3)), (hsv_img.shape[1] // 2, hsv_img.shape[0] // 2 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-                        hsv_img = cv2.circle(hsv_img, (i, hsv_img.shape[0] // 2), 2, (color, 255, 0), 1)
+                        hsv_img = cv2.circle(hsv_img, (hsv_img.shape[1] - i, hsv_img.shape[0] // 2), 2, (color, 255, 0), 1)
                     
                     hsv_img = cv2.circle(hsv_img, (i, hsv_img.shape[0] // 2), 1, (color, 255, 255), 1)
                     
